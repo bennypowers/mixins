@@ -41,3 +41,5 @@ class FireElement extends FireMixin(HTMLElement) {
 html`<fire-element @😛="${e => console.log(e.detail)}"></fire-element>`;
 // 'Haha!'
 ```
+
+See [`FireMixin` README](./src/fire/README.md)

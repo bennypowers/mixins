@@ -10,12 +10,13 @@ import { dedupeMixin } from '@open-wc/dedupe-mixin'
 export const FireMixin = dedupeMixin(function FireMixin<
    TBase extends Constructor<CustomElement>
 >(superclass: TBase) {
+  /** @element */
   class FireMixinElement extends superclass {
     /**
      * Fires a CustomEvent with an optional supplied detail.
      *
-     * Fired events do not bubble and are not composed. For composed events,
-     * use `dispatchEvent`.
+     * Fired events do not bubble and are not composed by default,
+     * Pass an EventInit in the third argument to set `bubbles` or `composed`.
      *
      * @param  type   CustomEvent type
      * @param  detail detail value

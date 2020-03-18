@@ -20,7 +20,7 @@
 
 | Method           | Type                                             | Description                                      |
 |------------------|--------------------------------------------------|--------------------------------------------------|
-| `fire`           | `(type: string, detail: any, { bubbles, composed }?: EventInit \| undefined): boolean` | Fires a CustomEvent with an optional supplied detail.<br /><br />Fired events do not bubble and are not composed. For composed events,<br />use `dispatchEvent`.<br /><br />**type**: CustomEvent type<br />**detail**: detail value<br />**options**: options initializer |
+| `fire`           | `(type: string, detail: any, { bubbles, composed }?: EventInit \| undefined): boolean` | Fires a CustomEvent with an optional supplied detail.<br /><br />Fired events do not bubble and are not composed by default,<br />Pass an EventInit in the third argument to set `bubbles` or `composed`.<br /><br />**type**: CustomEvent type<br />**detail**: detail value<br />**options**: options initializer |
 | `onItemsChanged` | `(event: CustomEvent<any>): void`                | Handles a change in the items.<br /><br />**event**: items-changed event |
 | `onSelect`       | `(): void`                                       |                                                  |
 | `selectIndex`    | `(selectedIndex: number): void`                  | Updates the read-only `selectedItem` and `selectedIndex` properties<br />Updates the `value` property<br /><br />**selectedIndex**: selectedIndex |
