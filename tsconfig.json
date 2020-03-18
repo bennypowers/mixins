@@ -1,5 +1,6 @@
 {
-  "files": ["src/index.ts"],
+  "include": ["src/**/*"],
+  "exclude": ["./lib", "./fire", "./select"],
   "compilerOptions": {
     "outDir": ".",
     "declaration": true,
