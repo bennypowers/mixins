@@ -8,6 +8,13 @@
     "clean": "sh scripts/clean.sh",
     "test": "karma start --coverage"
   },
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "fire/**/*",
+    "lib/**/*",
+    "select/**/*"
+  ],
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/bennypowers/mixins.git"
