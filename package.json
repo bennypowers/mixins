@@ -9,6 +9,7 @@
     "test": "karma start --coverage"
   },
   "files": [
+    "src/**/*",
     "index.d.ts",
     "index.js",
     "fire/**/*",
