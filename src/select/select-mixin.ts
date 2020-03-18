@@ -40,31 +40,55 @@ const hasAttribute = (attr: string) => (element: Element) =>
 
 const getItemIndex = propOr(-1, 'itemIndex');
 
-/**
- * Provides methods and properties for a selecting element.
- *
- * The element's shadow root must contain an anonymous slot for items.
- *
- * If you define a static property `allowedChildren` (Array, String, or RegExp), the `items`
- * property will filter for those tag names based on their custom element class' static `is` property
- * or `localName`
- *
- * @example
- * ```html
-<my-select>
-  #shadow-root
-    <slot></slot>
-</my-select>
-  ```
- */
-
 export const SelectMixin = dedupeMixin(function SelectMixin<
    TBase extends Constructor<LitElement>
  >(superclass: TBase) {
   /**
-   * @element
-   * @fires select - When an item is selected
-   * @extends LitElement
+    * Provides methods and properties for a selecting element.
+    *
+    * The element's shadow root must contain an anonymous slot for items.
+    *
+    * If you define a static property `allowedChildren` (Array, String, or RegExp), the `items`
+    * property will filter for those tag names based on their custom element class' static `is` property
+    * or `localName`
+    * 
+    * To select items that live in your shadow root, e.g. SVG children, you can override the
+    * getters and update method:
+    *
+    * @element SelectMixin
+    * @fires select - When an item is selected
+    * @extends LitElement
+    *
+    * @example
+    * ```html
+    * <my-select>
+    *  #shadow-root
+    *    <slot></slot>
+    * </my-select>
+    * ```
+    *
+    * @example
+    * ```js
+    * class HasSelectableShadowChildren extends SelectMixin {
+    *   // override SelectMixin updateItems
+    *   updateItems() {
+    *     const { items: oldItems } = this;
+    *     const items = Array.from(this.shadowRoot.querySelectorAll('svg rect'));
+    *     items.forEach((element, index) => {
+    *       element.itemIndex = index;
+    *       element.setAttribute('data-item-index', index.toString());
+    *     });
+    *     this._items = items;
+    *     this.requestUpdate('items', oldItems);
+    *     this.fire('items-changed', items);
+    *   }
+    *
+    *   // Override SelectMixin getter
+    *   get selectedItem() { return this.shadowRoot.querySelector('rect.active'); }
+    *   set selectedItem(_) {}
+    *  }
+    * ```
+    *
    */
   class SelectMixinElement extends FireMixin(superclass) {
     static allowedChildren: string[]|RegExp = /-/;
