@@ -4,6 +4,7 @@
   "description": "Custom Element Mixins",
   "main": "index.js",
   "scripts": {
+    "docs": "wca analyze --outFiles {dir}/README.md src",
     "clean": "sh scripts/clean.sh",
     "test": "karma start --coverage"
   },
@@ -27,6 +28,7 @@
     "@pwrs/eslint-config": "0.0.7",
     "@rollup/plugin-typescript": "^4.0.0",
     "bind-decorator": "^1.0.11",
+    "husky": "^4.2.3",
     "rollup": "^2.1.0",
     "typescript": "^3.8.3",
     "web-component-analyzer": "^1.0.3"

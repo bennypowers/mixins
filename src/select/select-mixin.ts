@@ -63,7 +63,7 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
  >(superclass: TBase) {
   /**
    * @element
-   * @fires select
+   * @fires select - When an item is selected
    * @extends LitElement
    */
   class SelectMixinElement extends FireMixin(superclass) {
