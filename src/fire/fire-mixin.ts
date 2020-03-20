@@ -22,7 +22,8 @@ export const FireMixin = dedupeMixin(function FireMixin<
      * @param  detail detail value
      * @param  options options initializer
      */
-    fire(type: string, detail: any | undefined, { bubbles = false, composed = false }: EventInit | undefined = {}): boolean {
+    fire(type: string, detail?: any, init?: EventInit): boolean {
+      const { bubbles = false, composed = false } = init ?? {}
       return this.dispatchEvent(new CustomEvent(type, { bubbles, composed, detail }));
     }
   };
