@@ -7,55 +7,19 @@ import { not } from '../lib/logic';
 
 import bound from 'bind-decorator';
 
-import { FireMixin } from '../fire/fire-mixin';
+import { FireMixin, FireMixinElement } from '../fire/fire-mixin';
 
 import { matches, isFocusedOrActive } from '../lib/dom';
 import type { Constructor } from '../lib/constructor';
 import { elem } from '../lib/pointfree';
 
-const noop = () => {}
-
-const compose: typeof import("ramda").compose =
-  (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)));
-
-class SelectedIndexConverter {
-  static fromAttribute(value, type) {
-    return (value.includes(',')) ? value.split(',').map(x => parseInt(x))
-    : parseInt(value);
-  }
-
-  static toAttribute(value, type) {
-    return Array.isArray(value) ? value.join(',') : value;
-  }
-}
-
 type SlotchangeEvent = Event & { target: HTMLSlotElement };
 
-interface Item extends HTMLElement {
+export interface Item extends HTMLElement {
   itemIndex: number;
 }
 
-const isSlotchangeEvent = (event: unknown): event is SlotchangeEvent =>
-  event instanceof Event &&
-  event.type !== 'slotchange'
-
-const isAllowedChild = (allowedChildren: string[]|RegExp) => (node: Node): node is Item =>
-    !(node instanceof HTMLElement) ? false
-  : Array.isArray(allowedChildren) ? allowedChildren.includes(node.tagName.toLowerCase())
-  : allowedChildren instanceof RegExp ? !!node.tagName.toLowerCase().match(allowedChildren)
-  : true;
-
-const getValue = x => x && propOr(null, 'value', x);
-
-const getIndex = (item: unknown, _index: number, array: unknown[]) =>
-  array.indexOf(item);
-
-const hasAttribute = (attr: string) => (element: Element) =>
-  element.hasAttribute(attr);
-
-const getItemIndex = propOr(-1, 'itemIndex');
-
-interface SelectMixinElementClassType {
+export interface SelectMixinElementClassType {
   allowedChildren: string[]|RegExp;
 }
 
@@ -248,8 +212,44 @@ export interface SelectMixinElement extends LitElement {
   selectedItemChanged(): void;
 };
 
+const isSlotchangeEvent = (event: unknown): event is SlotchangeEvent =>
+  event instanceof Event &&
+  event.type !== 'slotchange'
+
+const isAllowedChild = (allowedChildren: string[]|RegExp) => (node: Node): node is Item =>
+    !(node instanceof HTMLElement) ? false
+  : Array.isArray(allowedChildren) ? allowedChildren.includes(node.tagName.toLowerCase())
+  : allowedChildren instanceof RegExp ? !!node.tagName.toLowerCase().match(allowedChildren)
+  : true;
+
+const getValue = x => x && propOr(null, 'value', x);
+
+const getIndex = (item: unknown, _index: number, array: unknown[]) =>
+  array.indexOf(item);
+
+const hasAttribute = (attr: string) => (element: Element) =>
+  element.hasAttribute(attr);
+
+const getItemIndex = propOr(-1, 'itemIndex');
+
+const noop = () => {}
+
+const compose: typeof import("ramda").compose =
+  (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)));
+
+class SelectedIndexConverter {
+  static fromAttribute(value, type) {
+    return (value.includes(',')) ? value.split(',').map(x => parseInt(x))
+    : parseInt(value);
+  }
+
+  static toAttribute(value, type) {
+    return Array.isArray(value) ? value.join(',') : value;
+  }
+}
+
 export const SelectMixin = dedupeMixin(
-  function SelectMixin<TBase extends Constructor<LitElement>>(superclass: TBase): TBase & Constructor<SelectMixinElement> & SelectMixinElementClassType {
+  function SelectMixin<TBase extends Constructor<LitElement>>(superclass: TBase): TBase & Constructor<SelectMixinElement & FireMixinElement> & SelectMixinElementClassType {
   /**
     * Provides methods and properties for a selecting element.
     *
