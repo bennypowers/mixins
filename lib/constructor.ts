@@ -7,4 +7,4 @@ export interface CustomElement extends HTMLElement {
     disconnectedCallback?(): void;
 }
 
-export type Constructor<T = {}> = new (...a: any[]) => T
+export type { Constructor } from 'lit-element';

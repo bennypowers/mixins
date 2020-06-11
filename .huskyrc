@@ -1,5 +1,5 @@
 {
   "hooks": {
-    "pre-commit": "npm run docs && git add */README.md"
+    "pre-commit": "tsc && npm run docs && git add */README.md"
   }
 }

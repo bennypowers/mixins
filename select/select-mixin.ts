@@ -1,4 +1,4 @@
-import type { PropertyValues, LitElement } from 'lit-element';
+import type { Constructor, PropertyValues, LitElement } from 'lit-element';
 import { dedupeMixin } from '@open-wc/dedupe-mixin'
 import { property, query } from 'lit-element';
 
@@ -10,7 +10,6 @@ import bound from 'bind-decorator';
 import { FireMixin, FireMixinElement } from '../fire/fire-mixin';
 
 import { matches, isFocusedOrActive } from '../lib/dom';
-import type { Constructor } from '../lib/constructor';
 import { elem } from '../lib/pointfree';
 
 type SlotchangeEvent = Event & { target: HTMLSlotElement };

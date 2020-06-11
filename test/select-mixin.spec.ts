@@ -1,15 +1,10 @@
-import {
-  expect,
-  defineCE,
-  element as _element,
-  fixture,
-} from './test-helpers';
+import { expect, defineCE, fixture } from '@open-wc/testing';
 
 import { LitElement, html } from 'lit-element';
 
 import { SelectMixin, SelectMixinElement } from '../select';
 
-let element = _element as unknown as SelectMixinElement;
+let element: SelectMixinElement;
 
 async function updateComplete(): Promise<any> {
   return await element.updateComplete;
