@@ -4,6 +4,7 @@
   "description": "Custom Element Mixins",
   "main": "index.js",
   "scripts": {
+    "prepublish": "tsc",
     "docs": "wca analyze --outFiles {dir}/README.md .",
     "clean": "sh scripts/clean.sh",
     "test": "karma start --coverage"
