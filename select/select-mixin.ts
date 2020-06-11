@@ -25,6 +25,8 @@ export interface SelectMixinElementClassType {
 export interface SelectMixinElement extends LitElement {
   itemsMutationObserver: MutationObserver;
 
+  _items: Item[];
+
   _focusedIndex: number;
 
   _focusedItem: Item;
