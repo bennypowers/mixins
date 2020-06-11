@@ -2,9 +2,8 @@ import type { PropertyValues, LitElement } from 'lit-element';
 import { dedupeMixin } from '@open-wc/dedupe-mixin'
 import { property, query } from 'lit-element';
 
-import propOr from 'crocks/helpers/propOr';
-import compose from 'crocks/helpers/compose';
-import not from 'crocks/logic/not';
+import { propOr } from '../lib/propOr';
+import { not } from '../lib/logic';
 
 import bound from 'bind-decorator';
 
@@ -13,6 +12,22 @@ import { FireMixin } from '../fire/fire-mixin';
 import { matches, isFocusedOrActive } from '../lib/dom';
 import type { Constructor } from '../lib/constructor';
 import { elem } from '../lib/pointfree';
+
+const noop = () => {}
+
+const compose: typeof import("ramda").compose =
+  (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)));
+
+class SelectedIndexConverter {
+  static fromAttribute(value, type) {
+    return (value.includes(',')) ? value.split(',').map(x => parseInt(x))
+    : parseInt(value);
+  }
+
+  static toAttribute(value, type) {
+    return Array.isArray(value) ? value.join(',') : value;
+  }
+}
 
 type SlotchangeEvent = Event & { target: HTMLSlotElement };
 
@@ -40,9 +55,8 @@ const hasAttribute = (attr: string) => (element: Element) =>
 
 const getItemIndex = propOr(-1, 'itemIndex');
 
-export const SelectMixin = dedupeMixin(function SelectMixin<
-   TBase extends Constructor<LitElement>
- >(superclass: TBase) {
+export const SelectMixin = dedupeMixin(
+  function SelectMixin<TBase extends Constructor<LitElement>>(superclass: TBase) {
   /**
     * Provides methods and properties for a selecting element.
     *
@@ -51,13 +65,11 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     * If you define a static property `allowedChildren` (Array, String, or RegExp), the `items`
     * property will filter for those tag names based on their custom element class' static `is` property
     * or `localName`
-    * 
+    *
     * To select items that live in your shadow root, e.g. SVG children, you can override the
     * getters and update method:
     *
-    * @element SelectMixin
     * @fires select - When an item is selected
-    * @extends LitElement
     *
     * @example
     * ```html
@@ -93,19 +105,14 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
   class SelectMixinElement extends FireMixin(superclass) {
     static allowedChildren: string[]|RegExp = /-/;
 
-    /** @protected */
     itemsMutationObserver: MutationObserver;
 
-    /** @protected */
     _focusedIndex: number;
 
-    /** @protected */
     _focusedItem: Item;
 
-    /** @protected */
     previousSelectedItem: Item | Item[];
 
-    /** @protected */
     previousSelectedIndex: number | number[];
 
     /**
@@ -121,7 +128,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
 
     set items(_) {}
 
-    /** @protected */
     _items: Item[] = [];
 
     /**
@@ -157,7 +163,7 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * The boolean attribute on items which, when present, indicates that the item is selected.
      */
-    @property({ type: String, attribute: 'attribute-for-selected', })
+    @property({ type: String, attribute: 'attribute-for-selected' })
     attributeForSelected: string = 'selected';
 
     /**
@@ -165,15 +171,7 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
      */
     @property({
       type: Number,
-      converter: {
-        fromAttribute(value, type) {
-          return (value.includes(',')) ? value.split(',').map(x => parseInt(x))
-          : parseInt(value);
-        },
-        toAttribute(value, type) {
-          return Array.isArray(value) ? value.join(',') : value;
-        },
-      },
+      converter: SelectedIndexConverter,
       attribute: 'selected-index',
     })
 
@@ -236,7 +234,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
 
     /**
      * The anonymous slot for list items
-     * @protected
      */
     @query('slot:not([name])') contentSlot: HTMLSlotElement;
 
@@ -245,30 +242,27 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Adds event listeners for things like click, select, keydown.
      * Initializes the mutation observer
-     * @inheritdoc
      */
     connectedCallback(): void {
       super.connectedCallback();
-      this.addEventListener('items-changed', this.onItemsChanged);
+      this.addEventListener('items-changed', (this.onItemsChanged ?? noop));
       this.addEventListener('keydown', this.onKeydown);
-      this.addEventListener('select', this.onSelect);
+      this.addEventListener('select', (this.onSelect ?? noop));
       this.setAttribute('aria-haspopup', 'true');
       this.initMutationObserver();
     }
 
     /**
      * Clears event listeners to prevent memory leaks
-     * @inheritdoc
      */
     disconnectedCallback(): void {
       super.disconnectedCallback();
-      this.removeEventListener('items-changed', this.onItemsChanged);
+      this.removeEventListener('items-changed', (this.onItemsChanged ?? noop));
       this.removeEventListener('keydown', this.onKeydown);
-      this.removeEventListener('select', this.onSelect);
+      this.removeEventListener('select', (this.onSelect ?? noop));
       this.itemsMutationObserver.disconnect();
     }
 
-    /** @inheritdoc */
     firstUpdated(changed: PropertyValues): void {
       super.firstUpdated(changed);
       this.contentSlot?.addEventListener?.('slotchange', this.updateItems);
@@ -276,7 +270,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
       this.updateItems();
     }
 
-    /** @inheritdoc */
     updated(changed: PropertyValues): void {
       super.updated && super.updated(changed);
       if (changed.has('attributeForSelected')) this.initMutationObserver();
@@ -331,7 +324,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Updates the read-only `focusedIndex` property
      * @param  focusedIndex focusedIndex
-     * @protected
      */
     focusIndex(focusedIndex: number): void {
       // Find the item
@@ -342,7 +334,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Focuses the next item in the list.
      * Wraps around to first item from last.
-     * @protected
      */
     focusNext(): void {
       const { focusedIndex, items: { length } } = this;
@@ -355,7 +346,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Focuses the previous item in the list.
      * Wraps around to last item from first.
-     * @protected
      */
     focusPrevious(): void {
       const { focusedIndex } = this;
@@ -365,7 +355,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
       this.focusIndex(previousIndex);
     }
 
-    /** @protected */
     @bound setItemIndex(element: Item, index: number) {
       element.itemIndex = index;
       element.setAttribute('data-item-index', index.toString());
@@ -377,7 +366,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
      *
      * Caches previous values so that we can call requestUpdate
      * @param  mutationRecords
-     * @protected
      */
     @bound mutated(mutationRecords: (MutationRecord & { target: HTMLElement })[]): void {
       const { attributeForSelected, multi } = this;
@@ -415,7 +403,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
 
     /**
      * Manage state by observing which items have the attribute-for-selected
-     * @protected
      */
     initMutationObserver(): void {
       if (this.itemsMutationObserver) this.itemsMutationObserver.disconnect();
@@ -434,11 +421,11 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
      * Updates the `items` read-only property
      * @fires items-changed
      * @param  maybeEvent slotchange event
-     * @protected
      */
     @bound updateItems(maybeEvent?: SlotchangeEvent): void {
       const {
         items: oldItems,
+        setItemIndex,
       } = this;
 
 
@@ -469,7 +456,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Update the read-only focusedIndex property
      * @param  focusedIndex the newly selected item's index
-     * @protected
      */
     updateFocusedIndex(focusedIndex: number) {
       const { focusedIndex: oldValue } = this;
@@ -480,7 +466,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Update the read-only focusedItem property
      * @param  focusedItem the newly selected item
-     * @protected
      */
     updateFocusedItem(focusedItem: Item) {
       const { focusedItem: oldValue } = this;
@@ -488,9 +473,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
       this.requestUpdate('focusedItem', oldValue);
     }
 
-    /**
-     * @protected
-     */
     updateSelected({ previousSelectedItem, previousSelectedIndex }: {
       previousSelectedItem: Item | Item[],
       previousSelectedIndex: number | number[]
@@ -504,7 +486,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Actually updates the selected index
      * @param  value index to select
-     * @protected
      */
     @bound setSelectedIndex(value: number): void {
       const {
@@ -530,7 +511,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Updates selected index when an array is passed
      * @param   indices indices of items to select
-     * @protected
      */
     selectMultiIndex(indices: number[]): void {
       const isItemNotSelected = not(compose(elem(indices), getItemIndex));
@@ -542,7 +522,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Handles keyboard events
      * Lets user select items with the arrow keys
-     * @protected
      */
     @bound onKeydown(event: KeyboardEvent): void {
       if (event.defaultPrevented) return;
@@ -558,19 +537,14 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     /**
      * Handles a change in the items.
      * @param   event items-changed event
-     * @abstract
      */
-    onItemsChanged(event: CustomEvent) { }
+    onItemsChanged?(event: CustomEvent): void
 
-    /**
-     * @abstract
-     */
-    onSelect() {}
+    onSelect?(): void
 
     /**
      * Focuses an item.
      * @param  focusedItem
-     * @protected
      */
     @bound focusItem(focusedItem: Item): void {
       this.updateFocusedIndex(this.items.indexOf(focusedItem));
@@ -581,7 +555,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
 
     /**
      * Unfocuses an item.
-     * @protected
      */
     @bound unfocusItem(item: Item): void {
       /* istanbul ignore else */
@@ -593,7 +566,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
 
     /**
      * Toggles the selected state of the focused item.
-     * @protected
      */
     toggleFocusedItem(): void {
       const { focusedItem, attributeForSelected } = this;
@@ -605,7 +577,6 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
 
     /**
      * React to `selectedItem` or `selectedIndex` changing
-     * @protected
      */
     selectedItemChanged(): void {
       if (this.selectedItem)
@@ -613,5 +584,5 @@ export const SelectMixin = dedupeMixin(function SelectMixin<
     }
   };
 
-  return SelectMixinElement
+  return SelectMixinElement;
 });

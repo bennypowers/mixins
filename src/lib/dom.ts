@@ -1,4 +1,4 @@
-import or from 'crocks/logic/or';
+import { or } from "./logic";
 
 export const matches = (selector: string) => (el: Element) =>
   el.matches(selector);
