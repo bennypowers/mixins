@@ -1,36 +1,41 @@
 import {
   expect,
   defineCE,
-  assertInstantiation,
-  assertProperties,
-  element,
-  getDefaultExport,
-  setupTestWithInput,
-} from '@pwrs/test-helpers';
+  element as _element,
+  fixture,
+} from './test-helpers';
 
 import { LitElement, html } from 'lit-element';
-import { propOr } from 'crocks';
-import { log } from '../log';
 
-import { SelectMixin } from '../src/select';
+import { SelectMixin, SelectMixinElement } from '../select';
+
+let element = _element as unknown as SelectMixinElement;
+
+async function updateComplete(): Promise<any> {
+  return await element.updateComplete;
+}
 
 // Utility functions for tests
-const getLocalName = propOr('', 'localName');
+const getLocalName = x => x.localName;
 
-function selectNext() {
+async function selectNext() {
   element.selectNext();
+  await element.updateComplete;
 }
 
-function selectPrevious() {
+async function selectPrevious() {
   element.selectPrevious();
+  await element.updateComplete;
 }
 
-function focusNext() {
+async function focusNext() {
   element.focusNext();
+  await element.updateComplete;
 }
 
-function focusPrevious() {
+async function focusPrevious() {
   element.focusPrevious();
+  await element.updateComplete;
 }
 
 /**
@@ -40,34 +45,22 @@ function focusPrevious() {
 customElements.define('test-item', class TestItem extends HTMLElement {
   constructor() {
     super();
-    this.onclick = this.dispatchEvent.bind(this, new CustomEvent('item-selected'));
+    this.attachShadow({ mode: 'open', delegatesFocus: true })
+    this.shadowRoot.innerHTML = `<button></button>`
+    this.addEventListener('click', () => {
+      if (this.hasAttribute('selected')) this.removeAttribute('selected')
+      else this.setAttribute('selected', '')
+    });
   }
 });
 
 // setup functions
 
-/** Testing element tag name */
-let SelectElement;
-
-async function setupFixture(tagName) {
-  return setupTestWithInput({
-    tagName,
-    properties: await import(`../../test/select-mixin/${this.test.parent.title}/input.json`)
-      .then(getDefaultExport)
-      .catch(() => ({})),
-    template: await import(`../../test/select-mixin/${this.test.parent.title}/template.html`)
-      .then(getDefaultExport)
-      .then(template => template.replace('select-element', tagName))
-      .catch(() => undefined),
-  });
-}
-
 async function setupTest() {
-  SelectElement = defineCE(
+  let SelectElement = defineCE(
     /**
      * Test element which fulfils the minimal criteria for its internal DOM.
      * See `render` method for exemplary DOM.
-     * @mixes SelectMixin~mixin
      */
     class TestElement extends SelectMixin(LitElement) {
       // setup for tests which depend on items.
@@ -78,28 +71,35 @@ async function setupTest() {
        * @inheritdoc
        */
       render() {
-        return html`<slot @slotchange="${this.onContentSlotchange}"></slot>`;
+        return html`<slot></slot>`;
       }
     }
   );
-  return await setupFixture.call(this, SelectElement);
+
+  element = await fixture<SelectMixinElement>(`<${SelectElement}></${SelectElement}>`);
+
+  await element.updateComplete;
+
+  return element;
 }
 
-function setupWithAllowedChildren(allowedChildren) {
+function setupWithAllowedChildren(allowedChildren: string[]|RegExp) {
   return async function() {
-    SelectElement = defineCE(class extends SelectMixin(LitElement) {
+   let SelectElement = defineCE(class extends SelectMixin(LitElement) {
       static allowedChildren = allowedChildren;
 
       render() {
-        return html`<slot @slotchange="${this.onContentSlotchange}"></slot>`;
+        return html`<slot></slot>`;
       }
     });
-    return setupFixture.call(this, SelectElement);
+
+    element = await fixture<SelectMixinElement>(`<${SelectElement}></${SelectElement}>`);
+    await element.updateComplete;
   };
 }
 
 async function teardownFixture() {
-  log.level = 'silent';
+  element = null;
 }
 
 async function setupAllowedItems() {
@@ -107,6 +107,15 @@ async function setupAllowedItems() {
     <test-item></test-item>
     <best-item></best-item>
     <hooli-phone></hooli-phone>
+  `;
+  await element.updateComplete;
+}
+
+async function setupThreeItems() {
+  element.innerHTML = `
+    <test-item></test-item>
+    <test-item></test-item>
+    <test-item></test-item>
   `;
   await element.updateComplete;
 }
@@ -119,23 +128,24 @@ function selectIndex(index) {
   };
 }
 
-function focusIndex(index) {
+function focusIndex(index: number) {
   return function() {
     element.focusIndex(index);
   };
 }
 
-function clickItemAtIndex(index) {
-  return function clickItem() {
+function clickItemAtIndex(index: number) {
+  return async function clickItem() {
     element.items[index].click();
+    await element.updateComplete;
   };
 }
 
-function dispatchKeydown(key) {
+function dispatchKeydown(key: string) {
   return element.dispatchEvent(new KeyboardEvent('keydown', { key }));
 }
 
-function setupKeyEvent(key) {
+function setupKeyEvent(key: string) {
   return async function() {
     dispatchKeydown(key);
     await element.updateComplete;
@@ -148,16 +158,17 @@ describe('SelectMixin', function() {
   // TODO(bennyp): test for implementation of required DOM, add warning logs.
 
   beforeEach(setupTest);
+
   afterEach(teardownFixture);
 
   it('Instantiates without error', function() {
-    // because of the many calls to defineCE, it's best to defer this
-    // in a function
-    assertInstantiation(SelectElement)();
+    const K = class extends SelectMixin(LitElement) {}
+    expect(() => new K()).to.not.throw;
   });
 
   describe('setting private _items property', function() {
     beforeEach(async function() {
+      // @ts-expect-error
       element._items = NaN;
       await element.updateComplete;
     });
@@ -191,6 +202,7 @@ describe('SelectMixin', function() {
     });
 
     describe('as empty object', function() {
+      // @ts-expect-error
       beforeEach(setupWithAllowedChildren({}));
       describe('with three children', function() {
         beforeEach(setupAllowedItems);
@@ -201,6 +213,7 @@ describe('SelectMixin', function() {
     });
 
     describe('as integer', function() {
+      // @ts-expect-error
       beforeEach(setupWithAllowedChildren(1));
       describe('with three children', function() {
         beforeEach(setupAllowedItems);
@@ -211,6 +224,7 @@ describe('SelectMixin', function() {
     });
 
     describe('as NaN', function() {
+      // @ts-expect-error
       beforeEach(setupWithAllowedChildren(NaN));
       describe('with three children', function() {
         beforeEach(setupAllowedItems);
@@ -224,12 +238,14 @@ describe('SelectMixin', function() {
   describe('read only properties', function() {
     it('has read-only value property', async function() {
       const { value: expected } = element;
+      // @ts-expect-error
       element.value = 'foo';
       expect(element.value).to.equal(expected);
     });
 
     it('has read-only items property', async function() {
       const { items: expected } = element;
+      // @ts-expect-error
       element.items = ['one', 'two'];
       expect(element.items).to.equal(expected);
     });
@@ -242,18 +258,21 @@ describe('SelectMixin', function() {
 
     it('has read-only selectedItem property', async function() {
       const { selectedItem: expected } = element;
+      // @ts-expect-error
       element.selectedItem = document.createElement('div');
       expect(element.selectedItem).to.equal(expected);
     });
 
     it('has read-only focusedIndex property', async function() {
       const { focusedIndex: expected } = element;
+      // @ts-expect-error
       element.focusedIndex = 1;
       expect(element.focusedIndex).to.equal(expected);
     });
 
     it('has read-only focusedItem property', async function() {
       const { focusedItem: expected } = element;
+      // @ts-expect-error
       element.focusedItem = document.createElement('div');
       expect(element.focusedItem).to.equal(expected);
     });
@@ -261,8 +280,10 @@ describe('SelectMixin', function() {
 
   describe('with three items', function() {
     beforeEach(setupTest);
+    beforeEach(setupThreeItems);
     describe('clicking on an item', function() {
       beforeEach(clickItemAtIndex(0));
+      beforeEach(updateComplete);
       it('selects the first item', function() {
         expect(element.selectedItem).to.equal(element.items[0]);
       });
@@ -274,16 +295,16 @@ describe('SelectMixin', function() {
 
       describe('calling focusPrevious()', function() {
         beforeEach(focusPrevious);
-        it('wraps focus around to the last item', assertProperties(() => ({
-          focusedItem: element.items[element.items.length - 1],
-        })));
+        it('wraps focus around to the last item', function() {
+          expect(element.focusedItem).to.equal(element.items[element.items.length - 1])
+        });
       });
 
       describe('calling focusNext()', function() {
         beforeEach(focusNext);
-        it('wraps focus around to the last item', assertProperties(() => ({
-          focusedItem: element.items[INDEX + 1],
-        })));
+        it('wraps focus around to the last item', function() {
+          expect(element.focusedItem).to.equal(element.items[INDEX + 1])
+        });
       });
     });
 
@@ -293,46 +314,46 @@ describe('SelectMixin', function() {
 
       describe('calling focusPrevious()', function() {
         beforeEach(focusPrevious);
-        it('focuses the previous item', assertProperties(() => ({
-          focusedItem: element.items[INDEX - 1],
-        })));
+        it('focuses the previous item', function() {
+          expect(element.focusedItem).to.equal(element.items[INDEX - 1])
+        });
       });
 
       describe('calling focusNext()', function() {
         beforeEach(focusNext);
-        it('focuses the next item', assertProperties(() => ({
-          focusedItem: element.items[INDEX + 1],
-        })));
+        it('focuses the next item', function() {
+          expect(element.focusedItem).to.equal(element.items[INDEX + 1])
+        });
       });
 
       describe('on ArrowUp', function() {
         beforeEach(setupKeyEvent('ArrowUp'));
-        it('focuses the previous item', assertProperties(() => ({
-          focusedItem: element.items[INDEX - 1],
-        })));
+        it('focuses the previous item', function() {
+          expect(element.focusedItem).to.equal(element.items[INDEX - 1])
+        });
       });
 
       describe('on ArrowDown', function() {
         beforeEach(setupKeyEvent('ArrowDown'));
-        it('focuses the next item', assertProperties(() => ({
-          focusedItem: element.items[INDEX + 1],
-        })));
+        it('focuses the next item', function() {
+          expect(element.focusedItem).to.equal(element.items[INDEX + 1])
+        });
       });
 
       describe('on Enter', function() {
         beforeEach(setupKeyEvent('Enter'));
-        it('selects the focused item', assertProperties(() => ({
-          selectedItem: element.items[INDEX],
-          selectedIndex: INDEX,
-        })));
+        it('selects the focused item', function() {
+          expect(element.selectedItem).to.equal(element.items[INDEX])
+          expect(element.selectedIndex).to.equal(INDEX)
+        });
       });
 
       describe('on Space', function() {
         beforeEach(setupKeyEvent(' '));
-        it('selects the focused item', assertProperties(() => ({
-          selectedItem: element.items[INDEX],
-          selectedIndex: INDEX,
-        })));
+        it('selects the focused item', function() {
+          expect(element.selectedItem).to.equal(element.items[INDEX])
+          expect(element.selectedIndex).to.equal(INDEX)
+        });
       });
     });
 
@@ -341,12 +362,16 @@ describe('SelectMixin', function() {
       beforeEach(focusIndex(INDEX));
       describe('calling focusNext()', function() {
         beforeEach(focusNext);
-        it('wraps around to the first item', assertProperties({ focusedIndex: 0 }));
+        it('wraps around to the first item', function() {
+          expect(element.focusedIndex).to.equal(0);
+        });
       });
 
       describe('calling focusPrevious()', function() {
         beforeEach(focusPrevious);
-        it('focuses the previous item', assertProperties({ focusedIndex: INDEX - 1 }));
+        it('focuses the previous item', function() {
+          expect(element.focusedIndex).to.equal(INDEX -1)
+        });
       });
     });
 
@@ -356,18 +381,21 @@ describe('SelectMixin', function() {
 
       describe('calling selectNext()', function() {
         beforeEach(selectNext);
-        it('selects the next item', assertProperties({ selectedIndex: INDEX + 1 }));
+        it('selects the next item', function() {
+          expect(element.selectedIndex).to.equal(INDEX + 1)
+        });
       });
 
       describe('calling selectPrevious()', function() {
         beforeEach(selectPrevious);
-        it('wraps back to select last item', assertProperties({ selectedIndex: 2 }));
+        it('wraps back to select last item', function () {
+          expect(element.selectedIndex).to.equal(2)
+        });
       });
 
-      describe('clicking second item', function() {
+      describe('calling selectIndex(1)', function() {
         const INDEX = 1;
-        beforeEach(clickItemAtIndex(INDEX));
-        afterEach(clickItemAtIndex(0));
+        beforeEach(() => element.selectIndex(INDEX));
 
         it('sets selectedItem', async function() {
           expect(element.selectedItem).to.equal(element.items[INDEX]);
@@ -384,12 +412,16 @@ describe('SelectMixin', function() {
 
       describe('calling selectNext()', function() {
         beforeEach(selectNext);
-        it('wraps around to select first item', assertProperties({ selectedIndex: 0 }));
+        it('wraps around to select first item', function() {
+          expect(element.selectedIndex).to.equal(0);
+        });
       });
 
-      describe('selectPrevious()', function() {
+      describe('calling selectPrevious()', function() {
         beforeEach(selectPrevious);
-        it('selectes previous item', assertProperties({ selectedIndex: 1 }));
+        it('selects previous item', function () {
+          expect(element.selectedIndex).to.equal(1);
+        });
       });
     });
   });

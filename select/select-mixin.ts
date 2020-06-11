@@ -45,7 +45,7 @@ const isAllowedChild = (allowedChildren: string[]|RegExp) => (node: Node): node 
   : allowedChildren instanceof RegExp ? !!node.tagName.toLowerCase().match(allowedChildren)
   : true;
 
-const getValue = propOr(null, 'value');
+const getValue = x => x && propOr(null, 'value', x);
 
 const getIndex = (item: unknown, _index: number, array: unknown[]) =>
   array.indexOf(item);
@@ -55,8 +55,201 @@ const hasAttribute = (attr: string) => (element: Element) =>
 
 const getItemIndex = propOr(-1, 'itemIndex');
 
+interface SelectMixinElementClassType {
+  allowedChildren: string[]|RegExp;
+}
+
+export interface SelectMixinElement extends LitElement {
+  itemsMutationObserver: MutationObserver;
+
+  _focusedIndex: number;
+
+  _focusedItem: Item;
+
+  previousSelectedItem: Item | Item[];
+
+  previousSelectedIndex: number | number[];
+
+  /**
+   * The selectable items
+   */
+  readonly items: Item[]
+
+  /**
+   * Whether multiple selections are allowed
+   */
+  multi: boolean;
+
+  /**
+   * The index of the focused item
+   */
+  readonly focusedIndex: number
+
+  /**
+   * The focused item
+   */
+  readonly focusedItem: Item
+
+  /**
+   * The boolean attribute on items which, when present, indicates that the item is selected.
+   */
+  attributeForSelected: string;
+
+  /**
+   * The currently selected item's index
+   */
+  selectedIndex: number | number[];
+
+  /**
+   * The currently selected Item
+   */
+  readonly selectedItem: Item|Item[];
+
+  /**
+   * Selected Item's Value
+   */
+  readonly value: unknown|unknown[]
+
+  /**
+   * Whether one of the items is the active element (i.e. focused)
+   */
+  readonly hasActiveItem: boolean;
+
+  /**
+   * The anonymous slot for list items
+   */
+  contentSlot: HTMLSlotElement;
+
+  /**
+   * Updates the read-only `selectedItem` and `selectedIndex` properties
+   * Updates the `value` property
+   * @param  selectedIndex selectedIndex
+   */
+  selectIndex(selectedIndex: number): void
+
+  /**
+   * Selects the next item in the list.
+   * Wraps around to first item from last.
+   */
+  selectNext(): void;
+
+  /**
+   * Selects the previous item in the list.
+   * Wraps around to last item from first.
+   */
+  selectPrevious(): void;
+
+  // PRIVATE METHODS
+
+  /**
+   * Updates the read-only `focusedIndex` property
+   * @param  focusedIndex focusedIndex
+   */
+  focusIndex(focusedIndex: number): void;
+
+  /**
+   * Focuses the next item in the list.
+   * Wraps around to first item from last.
+   */
+  focusNext(): void;
+
+  /**
+   * Focuses the previous item in the list.
+   * Wraps around to last item from first.
+   */
+  focusPrevious(): void;
+
+  setItemIndex(element: Item, index: number);
+
+  /**
+   * Manage state by observing which items have the attribute-for-selected,
+   * and removing attribute for selected from previously selected items.
+   *
+   * Caches previous values so that we can call requestUpdate
+   * @param  mutationRecords
+   */
+  mutated(mutationRecords: (MutationRecord & { target: HTMLElement })[]): void;
+
+  /**
+   * Manage state by observing which items have the attribute-for-selected
+   */
+  initMutationObserver(): void;
+
+  /**
+   * Determines which children are 'items' according to the static 'allowedItems' property
+   * Updates the `items` read-only property
+   * @fires items-changed
+   * @param  maybeEvent slotchange event
+   */
+  updateItems(maybeEvent?: SlotchangeEvent): void;
+
+  /**
+   * Update the read-only focusedIndex property
+   * @param  focusedIndex the newly selected item's index
+   */
+  updateFocusedIndex(focusedIndex: number): void;
+
+  /**
+   * Update the read-only focusedItem property
+   * @param  focusedItem the newly selected item
+   */
+  updateFocusedItem(focusedItem: Item): void;
+
+  updateSelected({ previousSelectedItem, previousSelectedIndex }: {
+    previousSelectedItem: Item | Item[],
+    previousSelectedIndex: number | number[]
+  }): void;
+
+  /**
+   * Actually updates the selected index
+   * @param  value index to select
+   */
+  setSelectedIndex(value: number): void;
+
+  /**
+   * Updates selected index when an array is passed
+   * @param   indices indices of items to select
+   */
+  selectMultiIndex(indices: number[]): void;
+
+  /**
+   * Handles keyboard events
+   * Lets user select items with the arrow keys
+   */
+  onKeydown(event: KeyboardEvent): void;
+
+  /**
+   * Handles a change in the items.
+   * @param   event items-changed event
+   */
+  onItemsChanged?(event: CustomEvent): void
+
+  onSelect?(): void
+
+  /**
+   * Focuses an item.
+   * @param  focusedItem
+   */
+  focusItem(focusedItem: Item): void;
+
+  /**
+   * Unfocuses an item.
+   */
+  unfocusItem(item: Item): void;
+
+  /**
+   * Toggles the selected state of the focused item.
+   */
+  toggleFocusedItem(): void;
+
+  /**
+   * React to `selectedItem` or `selectedIndex` changing
+   */
+  selectedItemChanged(): void;
+};
+
 export const SelectMixin = dedupeMixin(
-  function SelectMixin<TBase extends Constructor<LitElement>>(superclass: TBase) {
+  function SelectMixin<TBase extends Constructor<LitElement>>(superclass: TBase): TBase & Constructor<SelectMixinElement> & SelectMixinElementClassType {
   /**
     * Provides methods and properties for a selecting element.
     *
@@ -118,7 +311,6 @@ export const SelectMixin = dedupeMixin(
     /**
      * The selectable items
      * @readonly
-     * @memberof SelectMixin#
      */
     @property({ type: Array })
 
@@ -376,26 +568,27 @@ export const SelectMixin = dedupeMixin(
         // get the item which was just now selected,
         // i.e. the first child which went from not having the attr to having it
         // if no such child exists, we're probably unselecting.
-        const { target: selectedItem } = mutationRecords
+        const selectedRecord = mutationRecords
           .find(({ oldValue, target }: MutationRecord & {target: Item}) =>
             oldValue === null &&
             target.hasAttribute(attributeForSelected)
-          ) || {};
+          );
 
         // get the item which was just now unselected,
         // i.e. the first child which went from having the attr to not having it
         // if no such child exists, we're probably selecting - use the cached value
-        const { target: previousSelectedItem } = mutationRecords
+        const prevRecord = mutationRecords
           .find(({ oldValue, target }: MutationRecord) =>
             oldValue === '' &&
             !(<Item>target).hasAttribute(attributeForSelected)
-          ) || { target: <Item>this.previousSelectedItem };
+          )
 
-        previousSelectedIndex = this.items.indexOf(<Item>previousSelectedItem);
+        previousSelectedIndex =
+          this.items.indexOf(<Item>prevRecord?.target);
 
         // Unselect previous item
-        if (previousSelectedItem && previousSelectedItem !== selectedItem)
-          previousSelectedItem.removeAttribute(attributeForSelected);
+        if (previousSelectedItem && previousSelectedItem !== selectedRecord?.target)
+          prevRecord?.target.removeAttribute(attributeForSelected);
       }
 
       this.updateSelected({ previousSelectedItem, previousSelectedIndex });

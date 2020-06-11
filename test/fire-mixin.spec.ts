@@ -1,20 +1,25 @@
-import chai, { expect } from 'chai';
-import sinonChai from 'sinon-chai';
-import { FireMixin } from '../src/fire';
-import { fixture, defineCE, oneEvent } from '@open-wc/testing-helpers';
-chai.use(sinonChai);
+import { FireMixin } from '../fire';
+import { expect, fixture, oneEvent } from '@open-wc/testing';
+
+class XFire extends FireMixin(HTMLElement) {}
+
+customElements.define('x-fire', XFire);
+
+  declare global {
+    interface HTMLElementTagNameMap {
+      'x-fire': XFire
+    }
+  }
 
 describe('FireMixin', function() {
   it('provides fire method', async function() {
-    const mixes = defineCE(class extends FireMixin(HTMLElement) {});
-    const el = await fixture(`<${mixes}></${mixes}>`);
+    const el = await fixture<XFire>(`<x-fire></x-fire>`);
     expect(el.fire).to.be.an.instanceof(Function);
   });
 
   describe('FireMixinElement#fire', function() {
     it('fires an event with type', async function() {
-      const mixes = defineCE(class extends FireMixin(HTMLElement) {});
-      const el = await fixture(`<${mixes}></${mixes}>`);
+      const el = await fixture<XFire>(`<x-fire></x-fire>`);
       const type = 'foo';
       setTimeout(() => el.fire(type));
       const event = await oneEvent(el, type);
@@ -22,8 +27,7 @@ describe('FireMixin', function() {
     });
 
     it('fires an event with detail', async function() {
-      const mixes = defineCE(class extends FireMixin(HTMLElement) {});
-      const el = await fixture(`<${mixes}></${mixes}>`);
+      const el = await fixture<XFire>(`<x-fire></x-fire>`);
       const type = 'foo';
       setTimeout(() => el.fire('foo', 2));
       const { detail } = await oneEvent(el, type);
@@ -31,8 +35,7 @@ describe('FireMixin', function() {
     });
 
     it('fires an event that by default does not bubble and is not composed', async function() {
-      const mixes = defineCE(class extends FireMixin(HTMLElement) {});
-      const el = await fixture(`<${mixes}></${mixes}>`);
+      const el = await fixture<XFire>(`<x-fire></x-fire>`);
       const type = 'foo';
       setTimeout(() => el.fire('foo', 2));
       const { bubbles, composed } = await oneEvent(el, type);
@@ -41,8 +44,7 @@ describe('FireMixin', function() {
     });
 
     it('fires a bubbling event', async function() {
-      const mixes = defineCE(class extends FireMixin(HTMLElement) {});
-      const el = await fixture(`<${mixes}></${mixes}>`);
+      const el = await fixture<XFire>(`<x-fire></x-fire>`);
       const type = 'foo';
       setTimeout(() => el.fire('foo', 2, { bubbles: true }));
       const { bubbles } = await oneEvent(el, type);
@@ -50,8 +52,7 @@ describe('FireMixin', function() {
     });
 
     it('fires a composed event', async function() {
-      const mixes = defineCE(class extends FireMixin(HTMLElement) {});
-      const el = await fixture(`<${mixes}></${mixes}>`);
+      const el = await fixture<XFire>(`<x-fire></x-fire>`);
       const type = 'foo';
       setTimeout(() => el.fire('foo', 2, { composed: true }));
       const { composed } = await oneEvent(el, type);

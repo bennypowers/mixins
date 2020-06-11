@@ -4,17 +4,19 @@
   "description": "Custom Element Mixins",
   "main": "index.js",
   "scripts": {
-    "docs": "wca analyze --outFiles {dir}/README.md src",
+    "docs": "wca analyze --outFiles {dir}/README.md .",
     "clean": "sh scripts/clean.sh",
     "test": "karma start --coverage"
   },
   "files": [
-    "src/**/*",
     "index.d.ts",
     "index.js",
-    "fire/**/*",
-    "lib/**/*",
-    "select/**/*"
+    "fire/**/*.js",
+    "lib/**/*.js",
+    "select/**/*.js",
+    "fire/**/*.d.ts",
+    "lib/**/*.d.ts",
+    "select/**/*.d.ts"
   ],
   "repository": {
     "type": "git",
@@ -33,9 +35,13 @@
   },
   "homepage": "https://github.com/bennypowers/mixins#readme",
   "devDependencies": {
+    "@open-wc/testing": "^2.5.17",
+    "@open-wc/testing-karma": "^3.4.3",
     "@pwrs/eslint-config": "0.0.7",
     "@rollup/plugin-typescript": "^4.1.2",
+    "crocks": "^0.12.4",
     "husky": "^4.2.5",
+    "karma": "^5.0.9",
     "rollup": "^2.15.0",
     "typescript": "^3.9.5",
     "web-component-analyzer": "^1.0.3"
@@ -44,7 +50,6 @@
     "@open-wc/dedupe-mixin": "^1.2.17",
     "@types/ramda": "^0.27.6",
     "bind-decorator": "^1.0.11",
-    "crocks": "^0.12.4",
     "lit-element": "^2.3.1",
     "ramda": "^0.27.0"
   }

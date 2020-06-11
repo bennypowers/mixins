@@ -1,12 +1,11 @@
 {
-  "include": ["src/**/*"],
-  "exclude": ["./lib", "./fire", "./select"],
+  "include": ["."],
   "compilerOptions": {
-    "outDir": ".",
     "declaration": true,
+    "experimentalDecorators": true,
     "moduleResolution": "Node",
     "target": "ES2017",
-    "lib": ["DOM", "ES2020"],
-    "experimentalDecorators": true
+    "lib": ["DOM", "ESNext", "ESNext.Array", "DOM.Iterable", "ES2019.Object", "ES2020"],
+    "esModuleInterop": true,
   }
 }

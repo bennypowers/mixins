@@ -1,6 +1,10 @@
 import type { Constructor, CustomElement } from "../lib/constructor";
 import { dedupeMixin } from '@open-wc/dedupe-mixin'
 
+export interface FireElement extends CustomElement {
+  fire(type: string, detail?: any, init?: EventInit): boolean
+}
+
 /**
  * Mixin which adds `fire` method
  *
@@ -8,7 +12,7 @@ import { dedupeMixin } from '@open-wc/dedupe-mixin'
  * @return  The mixed class
  */
 export const FireMixin = dedupeMixin(
-  function FireMixin<TBase extends Constructor<CustomElement>>(superclass: TBase) {
+  function FireMixin<TBase extends Constructor<CustomElement>>(superclass: TBase): TBase & Constructor<FireElement> {
     class FireMixinElement extends superclass {
       /**
        * Fires a CustomEvent with an optional supplied detail.
