@@ -721,10 +721,16 @@ export const SelectMixin = dedupeMixin(
       if (event.defaultPrevented) return;
       const { key } = event;
       switch (key) {
-        case 'ArrowUp': return this.focusPrevious();
-        case 'ArrowDown': return this.focusNext();
+        case 'ArrowUp':
+          event.preventDefault();
+          return this.focusPrevious();
+        case 'ArrowDown':
+          event.preventDefault();
+          return this.focusNext();
+        case ' ':
+          event.preventDefault();
         case 'Enter':
-        case ' ': return this.toggleFocusedItem();
+          return this.toggleFocusedItem();
       }
     }
 
