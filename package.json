@@ -12,12 +12,10 @@
   "files": [
     "index.d.ts",
     "index.js",
-    "fire/**/*.js",
-    "lib/**/*.js",
-    "select/**/*.js",
-    "fire/**/*.d.ts",
-    "lib/**/*.d.ts",
-    "select/**/*.d.ts"
+    "fire",
+    "lib",
+    "select",
+    "resolvers"
   ],
   "repository": {
     "type": "git",
