@@ -7,7 +7,8 @@
     "prepublishOnly": "tsc && npm run docs",
     "docs": "wca analyze --outFiles {dir}/README.md .",
     "clean": "sh scripts/clean.sh",
-    "test": "karma start --coverage"
+    "test": "wtr --coverage",
+    "test:watch": "wtr --coverage --watch"
   },
   "files": [
     "index.d.ts",
@@ -36,15 +37,16 @@
   "devDependencies": {
     "@apollo-elements/mixins": "^2.0.1",
     "@open-wc/testing": "^2.5.24",
-    "@open-wc/testing-karma": "^4.0.4",
     "@pwrs/eslint-config": "0.0.7",
+    "@rollup/plugin-commonjs": "^15.0.0",
     "@rollup/plugin-typescript": "^5.0.2",
+    "@web/dev-server-esbuild": "^0.2.1",
+    "@web/test-runner": "^0.7.8",
     "apollo-client": "^2.6.10",
     "crocks": "^0.12.4",
     "husky": "^4.2.5",
-    "karma": "^5.1.1",
-    "rollup": "^2.26.4",
-    "typescript": "^3.9.7",
+    "rollup": "^2.26.5",
+    "typescript": "^4.0.2",
     "web-component-analyzer": "^1.1.6"
   },
   "dependencies": {
