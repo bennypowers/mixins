@@ -1,1 +1,0 @@
-export { ResolversMixin } from './resolvers-mixin';
