@@ -1,6 +1,6 @@
 {
   "name": "@pwrs/mixins",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Custom Element Mixins",
   "main": "index.js",
   "scripts": {
