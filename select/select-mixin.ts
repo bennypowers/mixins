@@ -238,15 +238,15 @@ const noop = () => {}
 const compose: typeof import("ramda").compose =
   (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)));
 
-class SelectedIndexConverter {
-  static fromAttribute(value, type) {
+const SelectedIndexConverter = {
+  fromAttribute(value, type) {
     return (value.includes(',')) ? value.split(',').map(x => parseInt(x))
     : parseInt(value);
-  }
+  },
 
-  static toAttribute(value, type) {
+  toAttribute(value, type) {
     return Array.isArray(value) ? value.join(',') : value;
-  }
+  },
 }
 
 export const SelectMixin = dedupeMixin(
