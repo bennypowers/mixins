@@ -1,6 +1,6 @@
 import { expect, defineCE, fixture } from '@open-wc/testing';
 
-import { LitElement, html } from 'lit-element';
+import { LitElement, html } from 'lit';
 
 import { SelectMixin, SelectMixinElement } from '../select';
 
@@ -40,11 +40,11 @@ async function focusPrevious() {
 customElements.define('test-item', class TestItem extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: 'open', delegatesFocus: true })
-    this.shadowRoot.innerHTML = `<button></button>`
+    this.attachShadow({ mode: 'open', delegatesFocus: true });
+    this.shadowRoot.innerHTML = `<button></button>`;
     this.addEventListener('click', () => {
-      if (this.hasAttribute('selected')) this.removeAttribute('selected')
-      else this.setAttribute('selected', '')
+      if (this.hasAttribute('selected')) this.removeAttribute('selected');
+      else this.setAttribute('selected', '');
     });
   }
 });
@@ -52,7 +52,7 @@ customElements.define('test-item', class TestItem extends HTMLElement {
 // setup functions
 
 async function setupTest() {
-  let SelectElement = defineCE(
+  const SelectElement = defineCE(
     /**
      * Test element which fulfils the minimal criteria for its internal DOM.
      * See `render` method for exemplary DOM.
@@ -80,15 +80,16 @@ async function setupTest() {
 
 function setupWithAllowedChildren(allowedChildren: string[]|RegExp) {
   return async function() {
-   let SelectElement = defineCE(class extends SelectMixin(LitElement) {
+    class SelectElement extends SelectMixin(LitElement) {
       static allowedChildren = allowedChildren;
 
       render() {
         return html`<slot></slot>`;
       }
-    });
+    }
+    const tag = defineCE(SelectElement);
 
-    element = await fixture<SelectMixinElement>(`<${SelectElement}></${SelectElement}>`);
+    element = await fixture<SelectMixinElement>(`<${tag}></${tag}>`);
     await element.updateComplete;
   };
 }
@@ -157,7 +158,7 @@ describe('SelectMixin', function() {
   afterEach(teardownFixture);
 
   it('Instantiates without error', function() {
-    const K = class extends SelectMixin(LitElement) {}
+    const K = class extends SelectMixin(LitElement) {};
     expect(() => new K()).to.not.throw;
   });
 
@@ -291,14 +292,14 @@ describe('SelectMixin', function() {
       describe('calling focusPrevious()', function() {
         beforeEach(focusPrevious);
         it('wraps focus around to the last item', function() {
-          expect(element.focusedItem).to.equal(element.items[element.items.length - 1])
+          expect(element.focusedItem).to.equal(element.items[element.items.length - 1]);
         });
       });
 
       describe('calling focusNext()', function() {
         beforeEach(focusNext);
         it('wraps focus around to the last item', function() {
-          expect(element.focusedItem).to.equal(element.items[INDEX + 1])
+          expect(element.focusedItem).to.equal(element.items[INDEX + 1]);
         });
       });
     });
@@ -310,44 +311,44 @@ describe('SelectMixin', function() {
       describe('calling focusPrevious()', function() {
         beforeEach(focusPrevious);
         it('focuses the previous item', function() {
-          expect(element.focusedItem).to.equal(element.items[INDEX - 1])
+          expect(element.focusedItem).to.equal(element.items[INDEX - 1]);
         });
       });
 
       describe('calling focusNext()', function() {
         beforeEach(focusNext);
         it('focuses the next item', function() {
-          expect(element.focusedItem).to.equal(element.items[INDEX + 1])
+          expect(element.focusedItem).to.equal(element.items[INDEX + 1]);
         });
       });
 
       describe('on ArrowUp', function() {
         beforeEach(setupKeyEvent('ArrowUp'));
         it('focuses the previous item', function() {
-          expect(element.focusedItem).to.equal(element.items[INDEX - 1])
+          expect(element.focusedItem).to.equal(element.items[INDEX - 1]);
         });
       });
 
       describe('on ArrowDown', function() {
         beforeEach(setupKeyEvent('ArrowDown'));
         it('focuses the next item', function() {
-          expect(element.focusedItem).to.equal(element.items[INDEX + 1])
+          expect(element.focusedItem).to.equal(element.items[INDEX + 1]);
         });
       });
 
       describe('on Enter', function() {
         beforeEach(setupKeyEvent('Enter'));
         it('selects the focused item', function() {
-          expect(element.selectedItem).to.equal(element.items[INDEX])
-          expect(element.selectedIndex).to.equal(INDEX)
+          expect(element.selectedItem).to.equal(element.items[INDEX]);
+          expect(element.selectedIndex).to.equal(INDEX);
         });
       });
 
       describe('on Space', function() {
         beforeEach(setupKeyEvent(' '));
         it('selects the focused item', function() {
-          expect(element.selectedItem).to.equal(element.items[INDEX])
-          expect(element.selectedIndex).to.equal(INDEX)
+          expect(element.selectedItem).to.equal(element.items[INDEX]);
+          expect(element.selectedIndex).to.equal(INDEX);
         });
       });
     });
@@ -365,7 +366,7 @@ describe('SelectMixin', function() {
       describe('calling focusPrevious()', function() {
         beforeEach(focusPrevious);
         it('focuses the previous item', function() {
-          expect(element.focusedIndex).to.equal(INDEX -1)
+          expect(element.focusedIndex).to.equal(INDEX - 1);
         });
       });
     });
@@ -377,14 +378,14 @@ describe('SelectMixin', function() {
       describe('calling selectNext()', function() {
         beforeEach(selectNext);
         it('selects the next item', function() {
-          expect(element.selectedIndex).to.equal(INDEX + 1)
+          expect(element.selectedIndex).to.equal(INDEX + 1);
         });
       });
 
       describe('calling selectPrevious()', function() {
         beforeEach(selectPrevious);
-        it('wraps back to select last item', function () {
-          expect(element.selectedIndex).to.equal(2)
+        it('wraps back to select last item', function() {
+          expect(element.selectedIndex).to.equal(2);
         });
       });
 
@@ -414,7 +415,7 @@ describe('SelectMixin', function() {
 
       describe('calling selectPrevious()', function() {
         beforeEach(selectPrevious);
-        it('selects previous item', function () {
+        it('selects previous item', function() {
           expect(element.selectedIndex).to.equal(1);
         });
       });

@@ -1,6 +1,6 @@
-import type { Constructor, PropertyValues, LitElement } from 'lit-element';
-import { dedupeMixin } from '@open-wc/dedupe-mixin'
-import { property, query } from 'lit-element';
+import type { PropertyValues, LitElement } from 'lit';
+import { dedupeMixin } from '@open-wc/dedupe-mixin';
+import { property, query } from 'lit/decorators.js';
 
 import { propOr } from '../lib/propOr';
 import { not } from '../lib/logic';
@@ -14,15 +14,17 @@ import { elem } from '../lib/pointfree';
 
 type SlotchangeEvent = Event & { target: HTMLSlotElement };
 
+type Constructor<T = HTMLElement> = {
+  new (...args: any[]): T
+}
+
 export interface Item extends HTMLElement {
   itemIndex: number;
 }
 
-export interface SelectMixinElementClassType {
-  allowedChildren: string[]|RegExp;
-}
+export declare class SelectMixinElement extends LitElement {
+  static allowedChildren: string[]|RegExp;
 
-export interface SelectMixinElement extends LitElement {
   itemsMutationObserver: MutationObserver;
 
   _items: Item[];
@@ -211,11 +213,11 @@ export interface SelectMixinElement extends LitElement {
    * React to `selectedItem` or `selectedIndex` changing
    */
   selectedItemChanged(): void;
-};
+}
 
 const isSlotchangeEvent = (event: unknown): event is SlotchangeEvent =>
   event instanceof Event &&
-  event.type !== 'slotchange'
+  event.type !== 'slotchange';
 
 const isAllowedChild = (allowedChildren: string[]|RegExp) => (node: Node): node is Item =>
     !(node instanceof HTMLElement) ? false
@@ -233,9 +235,9 @@ const hasAttribute = (attr: string) => (element: Element) =>
 
 const getItemIndex = propOr(-1, 'itemIndex');
 
-const noop = () => {}
+const noop = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function
 
-const compose: typeof import("ramda").compose =
+const compose: typeof import('ramda').compose =
   (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)));
 
 const SelectedIndexConverter = {
@@ -247,56 +249,57 @@ const SelectedIndexConverter = {
   toAttribute(value, type) {
     return Array.isArray(value) ? value.join(',') : value;
   },
-}
+};
 
-export const SelectMixin = dedupeMixin(
-  function SelectMixin<TBase extends Constructor<LitElement>>(superclass: TBase): TBase & Constructor<SelectMixinElement & FireMixinElement> & SelectMixinElementClassType {
-  /**
-    * Provides methods and properties for a selecting element.
-    *
-    * The element's shadow root must contain an anonymous slot for items.
-    *
-    * If you define a static property `allowedChildren` (Array, String, or RegExp), the `items`
-    * property will filter for those tag names based on their custom element class' static `is` property
-    * or `localName`
-    *
-    * To select items that live in your shadow root, e.g. SVG children, you can override the
-    * getters and update method:
-    *
-    * @fires select - When an item is selected
-    *
-    * @example
-    * ```html
-    * <my-select>
-    *  #shadow-root
-    *    <slot></slot>
-    * </my-select>
-    * ```
-    *
-    * @example
-    * ```js
-    * class HasSelectableShadowChildren extends SelectMixin {
-    *   // override SelectMixin updateItems
-    *   updateItems() {
-    *     const { items: oldItems } = this;
-    *     const items = Array.from(this.shadowRoot.querySelectorAll('svg rect'));
-    *     items.forEach((element, index) => {
-    *       element.itemIndex = index;
-    *       element.setAttribute('data-item-index', index.toString());
-    *     });
-    *     this._items = items;
-    *     this.requestUpdate('items', oldItems);
-    *     this.fire('items-changed', items);
-    *   }
-    *
-    *   // Override SelectMixin getter
-    *   get selectedItem() { return this.shadowRoot.querySelector('rect.active'); }
-    *   set selectedItem(_) {}
-    *  }
-    * ```
-    *
-   */
-  class SelectMixinElement extends FireMixin(superclass) {
+/**
+ * Provides methods and properties for a selecting element.
+ *
+ * The element's shadow root must contain an anonymous slot for items.
+ *
+ * If you define a static property `allowedChildren` (Array, String, or RegExp), the `items`
+ * property will filter for those tag names based on their custom element class' static `is` property
+ * or `localName`
+ *
+ * To select items that live in your shadow root, e.g. SVG children, you can override the
+ * getters and update method:
+ *
+ * @fires select - When an item is selected
+ *
+ * @example
+ * ```html
+ * <my-select>
+ *  #shadow-root
+ *    <slot></slot>
+ * </my-select>
+ * ```
+ *
+ * @example
+ * ```js
+ * class HasSelectableShadowChildren extends SelectMixin {
+ *   // override SelectMixin updateItems
+ *   updateItems() {
+ *     const { items: oldItems } = this;
+ *     const items = Array.from(this.shadowRoot.querySelectorAll('svg rect'));
+ *     items.forEach((element, index) => {
+ *       element.itemIndex = index;
+ *       element.setAttribute('data-item-index', index.toString());
+ *     });
+ *     this._items = items;
+ *     this.requestUpdate('items', oldItems);
+ *     this.fire('items-changed', items);
+ *   }
+ *
+ *   // Override SelectMixin getter
+ *   get selectedItem() { return this.shadowRoot.querySelector('rect.active'); }
+ *   set selectedItem(_) {}
+ *  }
+ * ```
+ *
+ */
+function SelectMixinImpl<TBase extends Constructor<LitElement>>(
+  superclass: TBase
+) {
+  class MixedSelectMixinElement extends FireMixin(superclass) {
     static allowedChildren: string[]|RegExp = /-/;
 
     itemsMutationObserver: MutationObserver;
@@ -319,14 +322,14 @@ export const SelectMixin = dedupeMixin(
       return Array.isArray(this._items) ? this._items : [];
     }
 
-    set items(_) {}
+    set items(_) { _; }
 
     _items: Item[] = [];
 
     /**
      * Whether multiple selections are allowed
      */
-    @property({ type: Boolean }) multi: boolean = false;
+    @property({ type: Boolean }) multi = false;
 
     /**
      * The index of the focused item
@@ -338,7 +341,7 @@ export const SelectMixin = dedupeMixin(
       return this.items.indexOf(this.focusedItem);
     }
 
-    set focusedIndex(_) {}
+    set focusedIndex(_) { _; }
 
     /**
      * The focused item
@@ -351,13 +354,13 @@ export const SelectMixin = dedupeMixin(
       return focusedItem;
     }
 
-    set focusedItem(_) {}
+    set focusedItem(_) { _; }
 
     /**
      * The boolean attribute on items which, when present, indicates that the item is selected.
      */
     @property({ type: String, attribute: 'attribute-for-selected' })
-    attributeForSelected: string = 'selected';
+    attributeForSelected = 'selected';
 
     /**
      * The currently selected item's index
@@ -399,7 +402,7 @@ export const SelectMixin = dedupeMixin(
       );
     }
 
-    set selectedItem(_) {}
+    set selectedItem(_) { _; }
 
     /**
      * Selected Item's Value
@@ -414,7 +417,7 @@ export const SelectMixin = dedupeMixin(
       );
     }
 
-    set value(_) {}
+    set value(_) { _; }
 
     /**
      * Whether one of the items is the active element (i.e. focused)
@@ -492,7 +495,7 @@ export const SelectMixin = dedupeMixin(
           selectedIndex === lastItemIndex ? 0
           : typeof selectedIndex === 'number' ? selectedIndex + 1
           // shouldn't get here
-          : -1 ;
+          : -1;
       this.selectIndex(nextIndex);
     }
 
@@ -508,7 +511,7 @@ export const SelectMixin = dedupeMixin(
           selectedIndex === 0 ? lastItemIndex
         : typeof selectedIndex === 'number' ? selectedIndex - 1
         // shouldn't get here
-        : -1 ;
+        : -1;
       this.selectIndex(previousIndex);
     }
 
@@ -582,7 +585,7 @@ export const SelectMixin = dedupeMixin(
           .find(({ oldValue, target }: MutationRecord) =>
             oldValue === '' &&
             !(<Item>target).hasAttribute(attributeForSelected)
-          )
+          );
 
         previousSelectedIndex =
           this.items.indexOf(<Item>prevRecord?.target);
@@ -626,10 +629,9 @@ export const SelectMixin = dedupeMixin(
       // get child elements
       const children =
           !isSlotchangeEvent(maybeEvent) ? Array.from(this.children as HTMLCollection)
-        : maybeEvent.target.assignedElements()
+        : maybeEvent.target.assignedElements();
 
-      const allowedChildren =
-        (<typeof SelectMixinElement>this.constructor).allowedChildren
+      const { allowedChildren } = <typeof SelectMixinElement> this.constructor;
 
       // filter children for legitimate items
       const items =
@@ -729,7 +731,7 @@ export const SelectMixin = dedupeMixin(
           return this.focusNext();
         case ' ':
           event.preventDefault();
-        case 'Enter':
+        case 'Enter': // eslint-disable-line no-fallthrough
           return this.toggleFocusedItem();
       }
     }
@@ -782,7 +784,13 @@ export const SelectMixin = dedupeMixin(
       if (this.selectedItem)
         this.fire('select', this.selectedItem);
     }
-  };
+  }
 
-  return SelectMixinElement;
-});
+  return MixedSelectMixinElement as unknown as (
+    & TBase
+    & Constructor<SelectMixinElement & FireMixinElement>
+    & { allowedChildren: string[]|RegExp; }
+  );
+}
+
+export const SelectMixin = dedupeMixin(SelectMixinImpl);
