@@ -7,10 +7,10 @@ const commonjs = fromRollup(rollupCommonjs);
 export default {
   nodeResolve: true,
   files: [
-    'test/*.spec.js'
+    'test/*.spec.js',
   ],
   plugins: [
     esbuildPlugin({ ts: true }),
-    commonjs({ include: ['**/bind-decorator/*.js' ]})
-  ]
+    commonjs({ include: ['**/bind-decorator/*.js'] }),
+  ],
 };
