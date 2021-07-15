@@ -1,8 +1,9 @@
-import { expect, defineCE, fixture } from '@open-wc/testing';
+import { expect, defineCE, fixture, nextFrame } from '@open-wc/testing';
+import { sendKeys } from '@web/test-runner-commands';
 
 import { LitElement, html } from 'lit';
 
-import { SelectMixin, SelectMixinElement } from '../select';
+import { SelectMixin, SelectMixinElement } from '../select/select-mixin';
 
 let element: SelectMixinElement;
 
@@ -417,6 +418,75 @@ describe('SelectMixin', function() {
         beforeEach(selectPrevious);
         it('selects previous item', function() {
           expect(element.selectedIndex).to.equal(1);
+        });
+      });
+    });
+  });
+
+  describe.only('tablist keyboard mode', function() {
+    beforeEach(async function setupTest() {
+      const SelectElement = defineCE(
+        class TestElement extends SelectMixin(LitElement) {
+          static allowedChildren = ['div'];
+
+          static keyboardMode = 'tablist';
+
+          render() {
+            const items = this.items ?? [];
+            return html`
+              <div id="tabs" role="tablist" part="tablist">${items.map(({ dataset: { label } }, i) => html`
+                <button role="tab" part="tab" tabindex="-1" ?selected="${this.selectedIndex === i}">${label}</button>`)}
+              </div>
+
+              <div id="tabpanel" role="tabpanel" part="tabpanel">
+                <slot></slot>
+                <div id="default" ?hidden="${this.selectedItem}" part="default-container">
+                  <slot name="default"></slot>
+                </div>
+              </div>
+            `;
+          }
+        }
+      );
+
+      element = await fixture<SelectMixinElement>(`
+        <${SelectElement}>
+          <div data-label="A">A</div>
+          <div data-label="B">B</div>
+          <div data-label="C">C</div>
+        </${SelectElement}>
+      `);
+
+      await element.updateComplete;
+
+      return element;
+    });
+
+    describe('selecting first tab', function() {
+      beforeEach(function() {
+        element.selectIndex(0);
+      });
+
+      beforeEach(nextFrame);
+      beforeEach(() => element.updateComplete);
+
+      it('shows first tab\'s content', async function() {
+        expect(element.querySelector('[selected]').textContent).to.equal('A');
+      });
+
+      describe('pressing right arrow', function() {
+        beforeEach(async function() {
+          const event = new Event('keydown');
+          // @ts-expect-error: simulate event
+          event.key = 'ArrowRight';
+          element.dispatchEvent(event);
+        });
+
+        beforeEach(nextFrame);
+        beforeEach(() => element.updateComplete);
+
+        it('selects next tab', function() {
+          expect(element.querySelector('[selected]').textContent).to.equal('B');
         });
       });
     });

@@ -25,6 +25,8 @@ export interface Item extends HTMLElement {
 export declare class SelectMixinElement extends LitElement {
   static allowedChildren: string[]|RegExp;
 
+  static keyboardMode?: 'tablist'|'grid';
+
   itemsMutationObserver: MutationObserver;
 
   _items: Item[];
@@ -302,6 +304,8 @@ function SelectMixinImpl<TBase extends Constructor<LitElement>>(
   class MixedSelectMixinElement extends FireMixin(superclass) {
     static allowedChildren: string[]|RegExp = /-/;
 
+    static keyboardMode: 'tablist'|'grid';
+
     itemsMutationObserver: MutationObserver;
 
     _focusedIndex: number;
@@ -444,7 +448,6 @@ function SelectMixinImpl<TBase extends Constructor<LitElement>>(
       this.addEventListener('items-changed', (this.onItemsChanged ?? noop));
       this.addEventListener('keydown', this.onKeydown);
       this.addEventListener('select', (this.onSelect ?? noop));
-      this.setAttribute('aria-haspopup', 'true');
       this.initMutationObserver();
     }
 
@@ -719,41 +722,67 @@ function SelectMixinImpl<TBase extends Constructor<LitElement>>(
      * Handles keyboard events
      * Lets user select items with the arrow keys
      */
-    @bound onKeydown(event: KeyboardEvent): void {
+     @bound onKeydown(event: KeyboardEvent): void {
       if (event.defaultPrevented) return;
-      const { key } = event;
-      switch (key) {
-        case 'ArrowUp':
-          event.preventDefault();
-          return this.focusPrevious();
-        case 'ArrowDown':
-          event.preventDefault();
-          return this.focusNext();
-        case ' ':
-          event.preventDefault();
-        case 'Enter': // eslint-disable-line no-fallthrough
-          return this.toggleFocusedItem();
+      switch ((this.constructor as typeof MixedSelectMixinElement).keyboardMode) {
+        case 'tablist':
+          return this.onKeyboardNavTab(event);
+        default:
+          return this.onKeyboardNavDefault(event);
       }
     }
 
-    /**
+     /** @protected */
+     onKeyboardNavDefault(event: KeyboardEvent): void {
+       if (event.defaultPrevented) return;
+       const { key } = event;
+       switch (key) {
+         case 'ArrowUp':
+           event.preventDefault();
+           return this.focusPrevious();
+         case 'ArrowDown':
+           event.preventDefault();
+           return this.focusNext();
+         case ' ':
+           event.preventDefault();
+         case 'Enter': // eslint-disable-line no-fallthrough
+           return this.toggleFocusedItem();
+       }
+     }
+
+     /** @protected */
+     onKeyboardNavTab(event: KeyboardEvent): void {
+       const { key } = event;
+       switch (key) {
+         case 'ArrowLeft':
+         case 'ArrowUp':
+           event.preventDefault();
+           return this.selectPrevious();
+         case 'ArrowRight':
+         case 'ArrowDown':
+           event.preventDefault();
+           return this.selectNext();
+       }
+     }
+
+     /**
      * Handles a change in the items.
      * @param   event items-changed event
      */
-    onItemsChanged?(event: CustomEvent): void
+     onItemsChanged?(event: CustomEvent): void
 
-    onSelect?(): void
+     onSelect?(): void
 
     /**
      * Focuses an item.
      * @param  focusedItem
      */
     @bound focusItem(focusedItem: Item): void {
-      this.updateFocusedIndex(this.items.indexOf(focusedItem));
-      this.updateFocusedItem(focusedItem);
-      if (!focusedItem) return;
-      focusedItem.focus();
-    }
+       this.updateFocusedIndex(this.items.indexOf(focusedItem));
+       this.updateFocusedItem(focusedItem);
+       if (!focusedItem) return;
+       focusedItem.focus();
+     }
 
     /**
      * Unfocuses an item.

@@ -1,11 +1,12 @@
 {
   "include": ["."],
+  "exclude": ["*.test.ts"],
   "compilerOptions": {
     "declaration": true,
     "experimentalDecorators": true,
     "moduleResolution": "Node",
     "target": "ES2017",
     "lib": ["DOM", "ESNext", "ESNext.Array", "DOM.Iterable", "ES2019.Object", "ES2020"],
-    "esModuleInterop": true,
+    "esModuleInterop": true
   }
 }
